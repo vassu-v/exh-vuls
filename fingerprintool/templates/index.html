@@ -9,6 +9,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap"
         rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/ua-parser-js@1.0.35/dist/ua-parser.min.js"></script>
 </head>
 
 <body>
@@ -41,6 +42,14 @@
                     <div class="data-row">
                         <span class="label">Operating System</span>
                         <span class="value" id="os-info">Loading...</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Device Type</span>
+                        <span class="value" id="device-type">Loading...</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Device Model</span>
+                        <span class="value" id="device-model">Loading...</span>
                     </div>
                     <div class="data-row">
                         <span class="label">Screen Resolution</span>
@@ -93,19 +102,66 @@
     </div>
 
     <script>
-        // Extract Browser Info
-        document.getElementById('os-info').textContent = navigator.platform;
+        const parser = new UAParser();
+        const result = parser.getResult();
+
+        async function getModernInfo() {
+            const osEl = document.getElementById('os-info');
+            const uaEl = document.getElementById('user-agent');
+
+            // 1. Get OS Info (Preferring Client Hints for Windows 11 accuracy)
+            let osDisplay = `${result.os.name} ${result.os.version || ""}`;
+
+            if (navigator.userAgentData) {
+                try {
+                    const uaData = await navigator.userAgentData.getHighEntropyValues(["platformVersion", "architecture"]);
+                    if (navigator.userAgentData.platform === "Windows") {
+                        const version = parseInt(uaData.platformVersion.split('.')[0]);
+                        osDisplay = (version >= 13 ? "Windows 11" : "Windows 10") + ` (${uaData.architecture})`;
+                    }
+                } catch (e) { }
+            }
+            osEl.textContent = osDisplay || navigator.platform;
+
+            // 2. Get Browser Info
+            let browserName = result.browser.name || "Unknown Browser";
+
+            // Brave specific check as it often masks as Chrome in UA
+            if (navigator.brave && await navigator.brave.isBrave()) {
+                browserName = "Brave";
+            }
+
+            // Special check for Arc (which might mask as Chrome)
+            const ua = navigator.userAgent;
+            if (ua.includes("Arc")) {
+                browserName = "Arc";
+            }
+
+            // Add version if available
+            const browserDisplay = result.browser.version ? `${browserName} ${result.browser.version}` : browserName;
+
+            // Update UI
+            uaEl.innerHTML = `<span class="raw-ua">${ua}</span>`;
+
+            const hardwareCard = document.querySelector('.card:nth-child(2) .data-list');
+            const browserRow = document.createElement('div');
+            browserRow.className = 'data-row';
+            browserRow.innerHTML = `<span class="label">Detected Browser</span><span class="value" style="color: #818cf8;">${browserDisplay}</span>`;
+            hardwareCard.appendChild(browserRow);
+        }
+
+        // Standard Info
         document.getElementById('screen-res').textContent = `${window.screen.width} x ${window.screen.height} (${window.devicePixelRatio}x)`;
         document.getElementById('timezone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
         document.getElementById('language').textContent = navigator.language;
-        document.getElementById('user-agent').textContent = navigator.userAgent;
+
+        getModernInfo();
 
         // Canvas Fingerprinting
         function generateFingerprint() {
             const canvas = document.getElementById('fp-canvas');
             const ctx = canvas.getContext('2d');
 
-            // Draw something unique
             ctx.textBaseline = "top";
             ctx.font = "14px 'Arial'";
             ctx.textBaseline = "alphabetic";
@@ -117,7 +173,6 @@
             ctx.fillText("Browser Fingerprint 1.0", 4, 17);
 
             const b64 = canvas.toDataURL();
-            // Simple hash function
             let hash = 0;
             for (let i = 0; i < b64.length; i++) {
                 hash = ((hash << 5) - hash) + b64.charCodeAt(i);
@@ -128,12 +183,11 @@
 
         document.getElementById('fp-hash').textContent = generateFingerprint();
 
-        // Detect Incognito (Heuristic)
         async function checkIncognito() {
             const badge = document.getElementById('incognito-status');
             if ('storage' in navigator && 'estimate' in navigator.storage) {
                 const { quota } = await navigator.storage.estimate();
-                if (quota < 120000000) { // Simple heuristic for Chrome/Edge
+                if (quota < 120000000) {
                     badge.textContent = "Potential Incognito Mode Detected";
                     badge.classList.add('incognito');
                     return;
