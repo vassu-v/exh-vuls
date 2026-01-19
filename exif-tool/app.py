@@ -3,30 +3,30 @@ import os
 from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
 from geopy.geocoders import Nominatim
-from datetime import datetime
-import uuid
+import base64
+import io
 
 app = Flask(__name__)
 app.secret_key = "exif_secret_key"
-UPLOAD_FOLDER = 'static/uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 geolocator = Nominatim(user_agent="exif_extractor_app")
 
 def get_decimal_from_dms(dms, ref):
-    degrees = dms[0]
-    minutes = dms[1] / 60.0
-    seconds = dms[2] / 3600.0
-    if ref in ['S', 'W']:
-        degrees = -degrees
-        minutes = -minutes
-        seconds = -seconds
-    return degrees + minutes + seconds
-
-def get_exif_data(image_path):
     try:
-        image = Image.open(image_path)
+        degrees = dms[0]
+        minutes = dms[1] / 60.0
+        seconds = dms[2] / 3600.0
+        if ref in ['S', 'W']:
+            degrees = -degrees
+            minutes = -minutes
+            seconds = -seconds
+        return float(degrees + minutes + seconds)
+    except:
+        return 0.0
+
+def get_exif_data(image_file):
+    try:
+        image = Image.open(image_file)
         exif_data = image._getexif()
         if not exif_data:
             return None
@@ -92,14 +92,20 @@ def upload_file():
         return redirect(request.url)
     
     if file:
-        filename = f"{uuid.uuid4()}_{file.filename}"
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        # Save stream to memory for multiple uses
+        img_stream = io.BytesIO(file.read())
         
-        exif = get_exif_data(filepath)
+        # Get EXIF
+        img_stream.seek(0)
+        exif = get_exif_data(img_stream)
         metadata = extract_metadata(exif)
         
-        return render_template('results.html', metadata=metadata, image_url=url_for('static', filename=f'uploads/{filename}'))
+        # Convert image to base64 for preview (avoids saving to disk)
+        img_stream.seek(0)
+        encoded_img = base64.b64encode(img_stream.read()).decode('utf-8')
+        image_url = f"data:image/jpeg;base64,{encoded_img}"
+        
+        return render_template('results.html', metadata=metadata, image_url=image_url)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

@@ -65,12 +65,17 @@
     </div>
 
     {% if metadata and metadata.lat %}
+    <div id="map-data" data-lat="{{ metadata.lat }}" data-lng="{{ metadata.lng }}" style="display: none;"></div>
     <script>
-        var map = L.map('map').setView([{{ metadata.lat }}, { { metadata.lng } }], 13);
+        const mapEl = document.getElementById('map-data');
+        const lat = parseFloat(mapEl.dataset.lat);
+        const lng = parseFloat(mapEl.dataset.lng);
+
+        var map = L.map('map').setView([lat, lng], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
-        L.marker([{{ metadata.lat }}, {{ metadata.lng }}]).addTo(map);
+        L.marker([lat, lng]).addTo(map);
     </script>
     {% endif %}
 </body>
