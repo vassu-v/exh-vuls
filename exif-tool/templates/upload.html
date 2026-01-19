@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Data Extractor - Upload</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Image Data Extractor</h1>
+            <p>Upload a photo to see its metadata and location.</p>
+        </header>
+
+        <main>
+            <form action="/upload" method="post" enctype="multipart/form-data" class="upload-card">
+                <div class="upload-area" id="upload-area">
+                    <input type="file" name="file" id="file-input" accept="image/*" required>
+                    <label for="file-input">
+                        <div class="icon">📸</div>
+                        <span>Click or drag to upload image</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn">Extract Metadata</button>
+            </form>
+        </main>
+    </div>
+</body>
+
+</html>

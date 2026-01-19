@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Data Extractor - Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+
+<body class="results-page">
+    <div class="container">
+        <header>
+            <h1>Image Data Extractor</h1>
+            <a href="/" class="back-link">← Upload another</a>
+        </header>
+
+        <div class="results-grid">
+            <div class="image-section card">
+                <img src="{{ image_url }}" alt="Uploaded Photo" class="preview-img">
+            </div>
+
+            <div class="info-section card">
+                {% if metadata %}
+                <div class="metadata-list">
+                    <div class="meta-item">
+                        <span class="label">Device</span>
+                        <span class="value">{{ metadata.make }} {{ metadata.model }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="label">Date/Time</span>
+                        <span class="value">{{ metadata.date }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="label">Coordinates</span>
+                        <span class="value">
+                            {% if metadata.lat %}
+                            {{ "%.6f"|format(metadata.lat) }}, {{ "%.6f"|format(metadata.lng) }}
+                            {% else %}
+                            No GPS data found
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="label">Location</span>
+                        <span class="value">{{ metadata.address }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <p class="no-data">No EXIF metadata found in this image.</p>
+                {% endif %}
+            </div>
+
+            {% if metadata and metadata.lat %}
+            <div class="map-section card">
+                <div id="map"></div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if metadata and metadata.lat %}
+    <script>
+        var map = L.map('map').setView([{{ metadata.lat }}, { { metadata.lng } }], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        L.marker([{{ metadata.lat }}, {{ metadata.lng }}]).addTo(map);
+    </script>
+    {% endif %}
+</body>
+
+</html>
