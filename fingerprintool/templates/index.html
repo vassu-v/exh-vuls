@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Fingerprint & Info</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Browser Identity Dashboard</h1>
+            <p class="subtitle">Compare your digital footprint in normal vs. incognito mode.</p>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- Backend Info -->
+            <div class="card highlight">
+                <div class="card-header">
+                    <span class="icon">🌐</span>
+                    <h3>Network Information</h3>
+                </div>
+                <div class="data-row">
+                    <span class="label">Public IP Address</span>
+                    <span class="value" id="ip-addr">{{ ip }}</span>
+                </div>
+            </div>
+
+            <!-- Client Info -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="icon">💻</span>
+                    <h3>System & Hardware</h3>
+                </div>
+                <div class="data-list">
+                    <div class="data-row">
+                        <span class="label">Operating System</span>
+                        <span class="value" id="os-info">Loading...</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Screen Resolution</span>
+                        <span class="value" id="screen-res">Loading...</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Timezone</span>
+                        <span class="value" id="timezone">Loading...</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">Language</span>
+                        <span class="value" id="language">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Browser Details -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="icon">🔍</span>
+                    <h3>Browser Details</h3>
+                </div>
+                <div class="data-row vertical">
+                    <span class="label">User Agent String</span>
+                    <span class="value ua-string" id="user-agent">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Fingerprint -->
+            <div class="card fingerprint-card">
+                <div class="card-header">
+                    <span class="icon">🆔</span>
+                    <h3>Canvas Fingerprint</h3>
+                </div>
+                <div class="fingerprint-display">
+                    <div class="hash-box">
+                        <span class="label">Unique Hash String</span>
+                        <code id="fp-hash">Generating...</code>
+                    </div>
+                    <canvas id="fp-canvas" width="200" height="40" style="display: none;"></canvas>
+                </div>
+                <p class="note">This hash is unique to your browser's rendering engine. Try comparing it across
+                    different browsers or modes.</p>
+            </div>
+        </div>
+
+        <footer>
+            <div class="status-badge" id="incognito-status">Analyzing Privacy Mode...</div>
+        </footer>
+    </div>
+
+    <script>
+        // Extract Browser Info
+        document.getElementById('os-info').textContent = navigator.platform;
+        document.getElementById('screen-res').textContent = `${window.screen.width} x ${window.screen.height} (${window.devicePixelRatio}x)`;
+        document.getElementById('timezone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        document.getElementById('language').textContent = navigator.language;
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+
+        // Canvas Fingerprinting
+        function generateFingerprint() {
+            const canvas = document.getElementById('fp-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Draw something unique
+            ctx.textBaseline = "top";
+            ctx.font = "14px 'Arial'";
+            ctx.textBaseline = "alphabetic";
+            ctx.fillStyle = "#f60";
+            ctx.fillRect(125, 1, 62, 20);
+            ctx.fillStyle = "#069";
+            ctx.fillText("Browser Fingerprint 1.0", 2, 15);
+            ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+            ctx.fillText("Browser Fingerprint 1.0", 4, 17);
+
+            const b64 = canvas.toDataURL();
+            // Simple hash function
+            let hash = 0;
+            for (let i = 0; i < b64.length; i++) {
+                hash = ((hash << 5) - hash) + b64.charCodeAt(i);
+                hash |= 0;
+            }
+            return Math.abs(hash).toString(16);
+        }
+
+        document.getElementById('fp-hash').textContent = generateFingerprint();
+
+        // Detect Incognito (Heuristic)
+        async function checkIncognito() {
+            const badge = document.getElementById('incognito-status');
+            if ('storage' in navigator && 'estimate' in navigator.storage) {
+                const { quota } = await navigator.storage.estimate();
+                if (quota < 120000000) { // Simple heuristic for Chrome/Edge
+                    badge.textContent = "Potential Incognito Mode Detected";
+                    badge.classList.add('incognito');
+                    return;
+                }
+            }
+            badge.textContent = "Normal Browsing Mode Detected";
+        }
+        checkIncognito();
+    </script>
+</body>
+
+</html>
