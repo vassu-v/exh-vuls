@@ -44,12 +44,8 @@
                         <span class="value" id="os-info">Loading...</span>
                     </div>
                     <div class="data-row">
-                        <span class="label">Device Type</span>
-                        <span class="value" id="device-type">Loading...</span>
-                    </div>
-                    <div class="data-row">
-                        <span class="label">Device Model</span>
-                        <span class="value" id="device-model">Loading...</span>
+                        <span class="label">Device Category</span>
+                        <span class="value" id="device-category">Loading...</span>
                     </div>
                     <div class="data-row">
                         <span class="label">Screen Resolution</span>
@@ -95,10 +91,6 @@
                     different browsers or modes.</p>
             </div>
         </div>
-
-        <footer>
-            <div class="status-badge" id="incognito-status">Analyzing Privacy Mode...</div>
-        </footer>
     </div>
 
     <script>
@@ -123,7 +115,15 @@
             }
             osEl.textContent = osDisplay || navigator.platform;
 
-            // 2. Get Browser Info
+            // 2. Get Device Category (Heuristic based on Screen Width)
+            const width = window.screen.width;
+            let category = "Desktop";
+            if (width < 600) category = "Mobile";
+            else if (width < 1024) category = "Tablet";
+
+            document.getElementById('device-category').textContent = category;
+
+            // 3. Get Browser Info
             let browserName = result.browser.name || "Unknown Browser";
 
             // Brave specific check as it often masks as Chrome in UA
@@ -184,18 +184,8 @@
         document.getElementById('fp-hash').textContent = generateFingerprint();
 
         async function checkIncognito() {
-            const badge = document.getElementById('incognito-status');
-            if ('storage' in navigator && 'estimate' in navigator.storage) {
-                const { quota } = await navigator.storage.estimate();
-                if (quota < 120000000) {
-                    badge.textContent = "Potential Incognito Mode Detected";
-                    badge.classList.add('incognito');
-                    return;
-                }
-            }
-            badge.textContent = "Normal Browsing Mode Detected";
+            // Feature removed as requested due to cross-browser reliability issues
         }
-        checkIncognito();
     </script>
 </body>
 
