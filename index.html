@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Demo</title>
+  <style>
+    body { margin:0; font-family:sans-serif; }
+    iframe { width:100vw; height:100vh; border:none; }
+  </style>
+</head>
+<body>
+<iframe id="frame"></iframe>
+
+<script>
+let step = parseInt(localStorage.getItem("step") || "0");
+step = step + 1;
+if (step > 3) step = 1;   // change 3 to number of demos
+localStorage.setItem("step", step);
+
+const sites = {
+  1: "https://exh-vuls-klio.vercel.app/",
+  2: "https://exh-vuls.vercel.app/",
+  3: "https://subscribe-blue-hues.lovable.app/"
+};
+
+document.getElementById("frame").src = sites[step];
+</script>
+</body>
+</html>
